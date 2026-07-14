@@ -15,9 +15,7 @@ import useAxiosSecure from "../../hooks/useAxiosSecure";
 
 const Navber = ({ sidebarOpen, setSidebarOpen }) => {
   const { user, logOut } = useAuth();
-  const axiosSecure = useAxiosSecure();
   const [themIcon, setThemIcon] = useState("light")
-  const [profile, setProfile] = useState(null);
   const navigate = useNavigate();
 
   const currentTheme =
@@ -43,30 +41,9 @@ const Navber = ({ sidebarOpen, setSidebarOpen }) => {
       .catch(console.error);
   };
 
-  /* ==========================================
-          Load My Profile (for photo)
-  ========================================== */
-
-  useEffect(() => {
-
-    if (!user?.email) return;
-
-    axiosSecure.get("/users/profile/me")
-      .then(({ data }) => {
-
-        if (data.success) {
-
-          setProfile(data.data);
-
-        }
-
-      })
-      .catch((error) => console.log(error));
-
-  }, [user, axiosSecure]);
-
 
   return (
+    // <header className="navbar bg-base-100 border-b shadow-sm sticky top-0 z-40 px-4">
     <header className="navbar bg-base-100 shadow-sm sticky top-0 z-40 px-4">
 
       {/* Left */}
@@ -139,39 +116,16 @@ const Navber = ({ sidebarOpen, setSidebarOpen }) => {
           >
             <div className="flex items-center gap-2">
 
-              {
-
-                profile?.photo ? (
-
-                  <div className="avatar">
-
-                    <div className="w-9 h-9 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
-
-                      <img
-                        src={`${import.meta.env.VITE_API_BASE_URL}${profile.photo}`}
-                        alt={profile.name}
-                      />
-
-                    </div>
-
-                  </div>
-
-                ) : (
-
-                  <FaUserCircle className="text-3xl text-primary" />
-
-                )
-
-              }
+              <FaUserCircle className="text-3xl text-primary" />
 
               <div className="hidden md:block text-left">
 
                 <p className="font-semibold leading-4">
-                  {profile?.name || user?.displayName || "Administrator"}
+                  {user?.displayName || "Administrator"}
                 </p>
 
                 <small className="opacity-70">
-                  {profile?.email || user?.email}
+                  {user?.email}
                 </small>
 
               </div>
