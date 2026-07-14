@@ -8,7 +8,6 @@ const auth = getAuth(app);
 const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [authError, setAuthError] = useState(null);
 
     const createUser = (email, password) => {
         setLoading(true);
@@ -17,93 +16,52 @@ const AuthProvider = ({ children }) => {
 
     const userLogin = (email, password) => {
         setLoading(true);
-        return signInWithEmailAndPassword(auth, email, password);
+        return signInWithEmailAndPassword(auth, email, password)
     }
 
     const logOut = () => {
         setLoading(true);
-        return signOut(auth);
+        return signOut(auth)
     }
 
     useEffect(() => {
-
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-
+            setUser(currentUser);
+            // console.log("Auth", currentUser)
             if (currentUser) {
-
-                const loggedUser = { email: currentUser.email };
-
+                const loggedUser = {
+                    email: currentUser.email
+                }
+                // console.log(loggedUser)
                 fetch(`${import.meta.env.VITE_API_BASE_URL}/jwt`, {
-
                     method: "POST",
-
-                    headers: { "Content-Type": "application/json" },
-
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
                     body: JSON.stringify(loggedUser)
-
                 })
                     .then(res => res.json())
                     .then(data => {
-
-                        if (data.success) {
-
-                            // Active user — allow session
-
-                            localStorage.setItem("accessToken", data.token);
-
-                            setUser(currentUser);
-
-                        }
-                        else {
-
-                            // Inactive / not found — reject session
-
-                            localStorage.removeItem("accessToken");
-
-                            setUser(null);
-
-                            setAuthError(data.message || "Login failed.");
-
-                            signOut(auth);
-
-                        }
-
-                    })
-                    .catch(() => {
-
-                        localStorage.removeItem("accessToken");
-
-                        setUser(null);
-
-                    })
-                    .finally(() => setLoading(false));
-
-            }
-            else {
-
+                        // console.log('After JWT:', data);
+                        localStorage.setItem("accessToken", data.token);
+                    });
+            } else {
                 localStorage.removeItem("accessToken");
-
-                setUser(null);
-
-                setLoading(false);
-
             }
-
-        });
-
-        return () => unsubscribe();
-
-    }, []);
+            setLoading(false);
+        })
+        return () => {
+            return unsubscribe();
+        }
+    }, [])
 
     const authInfo = {
         user,
         loading,
         createUser,
         userLogin,
-        logOut,
-        authError,
-        setAuthError
-    };
+        logOut
+    }
 
     return (
         <AuthContext value={authInfo}>

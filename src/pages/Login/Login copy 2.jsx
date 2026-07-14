@@ -1,77 +1,23 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { FaEye, FaEyeSlash, FaEnvelope, FaLock, FaSignInAlt } from "react-icons/fa";
 import Swal from "sweetalert2";
+import axios from "axios";
 
 import useAuth from "../../hooks/useAuth";
 
 const Login = () => {
 
-    const { userLogin, user, authError, setAuthError } = useAuth();
-
+    const { userLogin, logOut } = useAuth();
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
-
     const [showPassword, setShowPassword] = useState(false);
-
     const [formData, setFormData] = useState({
-
         email: "",
-
         password: ""
-
     });
-
-    /* ==========================================
-            Redirect After Successful Login
-    ========================================== */
-
-    useEffect(() => {
-
-        if (user) {
-
-            navigate("/");
-            Swal.fire({
-
-                icon: "success",
-
-                title: `Welcome back, ${user.email}`,
-
-                timer: 1500,
-
-                showConfirmButton: false
-
-            });
-
-        }
-
-    }, [user, navigate]);
-
-    /* ==========================================
-            Show Inactive / Blocked Error
-    ========================================== */
-
-    useEffect(() => {
-
-        if (authError) {
-
-            Swal.fire({
-
-                icon: "warning",
-
-                title: "Account Inactive",
-
-                text: authError
-
-            });
-
-            setAuthError(null);
-
-        }
-
-    }, [authError, setAuthError]);
 
     /* ==========================================
             Input Change
@@ -82,11 +28,8 @@ const Login = () => {
         const { name, value } = e.target;
 
         setFormData(prev => ({
-
             ...prev,
-
             [name]: value
-
         }));
 
     };
@@ -96,32 +39,110 @@ const Login = () => {
     ========================================== */
 
     const handleLogin = async (e) => {
-
         e.preventDefault();
-
         try {
 
             setLoading(true);
 
+            // Step 1 : Firebase Login
+
             await userLogin(formData.email, formData.password);
 
-            // Success/failure of the DB status check is handled
-            // by AuthProvider (authError / user state above).
+            // Step 2 : Check Status + Get JWT
+
+            const { data } = await axios.post(
+
+                `${import.meta.env.VITE_API_BASE_URL}/jwt`,
+
+                { email: formData.email }
+
+            );
+
+            if (data.success) {
+
+                // Step 3 : Save Token
+
+                localStorage.setItem("accessToken", data.token);
+
+                Swal.fire({
+
+                    icon: "success",
+
+                    title: `Welcome back, ${data.user.name}`,
+
+                    timer: 1500,
+
+                    showConfirmButton: false
+
+                });
+
+                navigate("/");
+
+            }
 
         }
         catch (error) {
 
             console.log(error);
 
-            Swal.fire({
+            /* ==========================================
+                    Inactive User - Blocked
+            ========================================== */
 
-                icon: "error",
+            if (error.response?.data?.inactive) {
 
-                title: "Login Failed",
+                await logOut();
 
-                text: "Invalid email or password."
+                Swal.fire({
 
-            });
+                    icon: "warning",
+
+                    title: "Account Inactive",
+
+                    text: "Please contact with admin"
+
+                });
+
+            }
+
+            /* ==========================================
+                    User Not Found in Database
+            ========================================== */
+
+            else if (error.response?.status === 404) {
+
+                await logOut();
+
+                Swal.fire({
+
+                    icon: "error",
+
+                    title: "Account Not Found",
+
+                    text: "Please contact with admin"
+
+                });
+
+            }
+
+            /* ==========================================
+                    Firebase Auth Error
+                    (wrong password, no such user, etc.)
+            ========================================== */
+
+            else {
+
+                Swal.fire({
+
+                    icon: "error",
+
+                    title: "Login Failed",
+
+                    text: "Invalid email or password."
+
+                });
+
+            }
 
         }
         finally {
@@ -160,6 +181,8 @@ const Login = () => {
 
                     <form onSubmit={handleLogin} className="space-y-5">
 
+                        {/* Email */}
+
                         <div>
 
                             <label className="label">
@@ -189,6 +212,8 @@ const Login = () => {
                             </div>
 
                         </div>
+
+                        {/* Password */}
 
                         <div>
 

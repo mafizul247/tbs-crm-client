@@ -1,53 +1,85 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import {
     FaArrowLeft,
-    FaEye,
-    FaEyeSlash,
     FaSave,
     FaUser,
     FaEnvelope,
-    FaLock,
     FaUserTag,
     FaImage
 } from "react-icons/fa";
 
 import Swal from "sweetalert2";
-import useAuth from "../../hooks/useAuth";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
 
-const Register = () => {
+const UpdateUser = () => {
 
-    const { createUser } = useAuth();
-
+    const { id } = useParams();
     const axiosSecure = useAxiosSecure();
-
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
-
-    const [showPassword, setShowPassword] = useState(false);
-
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [fetching, setFetching] = useState(true);
+    const [newImage, setNewImage] = useState(null);
 
     const [formData, setFormData] = useState({
 
         name: "",
-
         email: "",
-
-        password: "",
-
-        confirmPassword: "",
-
         role: "User",
-
         status: "Active",
-
-        profilePicture: null
+        photo: ""
 
     });
+
+    /* ==========================================
+            Load Existing User
+    ========================================== */
+
+    useEffect(() => {
+
+        const loadUser = async () => {
+
+            try {
+
+                setFetching(true);
+
+                const { data } = await axiosSecure.get(`/users/${id}`);
+                console.log(data)
+                setFormData({
+
+                    name: data.name || "",
+                    email: data.email || "",
+                    role: data.role || "User",
+                    status: data.status || "Active",
+                    photo: data.photo || ""
+
+                });
+
+            }
+            catch (error) {
+
+                console.log(error);
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Failed to Load User",
+                    text: error.message
+                });
+
+            }
+            finally {
+
+                setFetching(false);
+
+            }
+
+        };
+
+        loadUser();
+
+    }, [id, axiosSecure]);
 
     /* ==========================================
             Input Change
@@ -73,70 +105,31 @@ const Register = () => {
 
     const handleImage = (e) => {
 
-        setFormData(prev => ({
-
-            ...prev,
-
-            profilePicture: e.target.files[0]
-
-        }));
+        setNewImage(e.target.files[0]);
 
     };
 
     /* ==========================================
             Submit
-            (Part 2)
     ========================================== */
 
-    const handleRegister = async (e) => {
+    const handleUpdate = async (e) => {
 
         e.preventDefault();
-
-        if (formData.password !== formData.confirmPassword) {
-
-            return Swal.fire({
-                icon: "warning",
-                title: "Password Mismatch",
-                text: "Password and Confirm Password must be the same."
-            });
-
-        }
-
-        if (formData.password.length < 6) {
-
-            return Swal.fire({
-                icon: "warning",
-                title: "Weak Password",
-                text: "Password must be at least 6 characters."
-            });
-
-        }
 
         try {
 
             setLoading(true);
 
-            // Step 1 : Create Firebase User
+            let photoURL = formData.photo;
 
-            const result = await createUser(
-                formData.email,
-                formData.password
-            );
+            // Step 1 : Upload New Image (if selected)
 
-            const firebaseUser = result.user;
-
-            let photoURL = "";
-
-            // Step 2 : Upload Profile Picture
-
-            if (formData.profilePicture) {
+            if (newImage) {
 
                 const imageData = new FormData();
 
-                imageData.append(
-                    "image",
-                    formData.profilePicture
-                );
+                imageData.append("image", newImage);
 
                 const uploadResponse = await axiosSecure.post(
 
@@ -160,51 +153,41 @@ const Register = () => {
 
             }
 
-            // Step 3 : Save User Information
+            // Step 2 : Update User Info
 
-            const userInfo = {
-
-                uid: firebaseUser.uid,
+            const updatedInfo = {
 
                 name: formData.name,
-
-                email: formData.email,
-
-                photo: photoURL,
 
                 role: formData.role,
 
                 status: formData.status,
 
-                createdAt: new Date()
+                photo: photoURL
 
             };
 
-            console.log(userInfo)
+            const { data } = await axiosSecure.patch(
 
-            const { data } = await axiosSecure.post(
+                `/users/${id}`,
 
-                "/users",
-
-                userInfo
+                updatedInfo
 
             );
 
-            if (data.insertedId) {
+            if (data.modifiedCount > 0 || data.matchedCount > 0) {
 
                 Swal.fire({
 
                     icon: "success",
 
-                    title: "User Created Successfully",
+                    title: "User Updated Successfully",
 
                     timer: 1800,
 
                     showConfirmButton: false
 
                 });
-
-                handleReset();
 
                 navigate("/users");
 
@@ -219,7 +202,7 @@ const Register = () => {
 
                 icon: "error",
 
-                title: "Registration Failed",
+                title: "Update Failed",
 
                 text: error.message
 
@@ -234,40 +217,19 @@ const Register = () => {
 
     };
 
-    const handleReset = () => {
+    if (fetching) {
 
-        setFormData({
+        return (
 
-            name: "",
+            <div className="flex justify-center items-center py-20">
 
-            email: "",
+                <span className="loading loading-spinner loading-lg text-primary"></span>
 
-            password: "",
+            </div>
 
-            confirmPassword: "",
+        );
 
-            role: "",
-
-            status: "",
-
-            profilePicture: null
-
-        });
-
-        setShowPassword(false);
-
-        setShowConfirmPassword(false);
-
-        // Clear file input
-        const fileInput = document.querySelector('input[type="file"]');
-
-        if (fileInput) {
-
-            fileInput.value = "";
-
-        }
-
-    };
+    }
 
     return (
 
@@ -275,7 +237,7 @@ const Register = () => {
 
             <Helmet>
 
-                <title>PMS || Create User</title>
+                <title>PMS || Update User</title>
 
             </Helmet>
 
@@ -287,13 +249,13 @@ const Register = () => {
 
                     <h2 className="text-3xl font-bold">
 
-                        Create User
+                        Update User
 
                     </h2>
 
                     <p className="text-gray-500">
 
-                        Create a new system user.
+                        Edit user information.
 
                     </p>
 
@@ -312,11 +274,7 @@ const Register = () => {
 
             </div>
 
-            <form onSubmit={handleRegister}>
-
-                {/* ==========================================
-                        Personal Information
-                ========================================== */}
+            <form onSubmit={handleUpdate}>
 
                 <div className="card bg-base-100 shadow border">
 
@@ -327,6 +285,43 @@ const Register = () => {
                             Personal Information
 
                         </h2>
+
+                        {/* Current Photo Preview */}
+
+                        <div className="flex items-center gap-4 mb-3">
+
+                            <div className="avatar">
+
+                                <div className="w-16 rounded-full">
+
+                                    <img
+                                        src={
+
+                                            newImage
+
+                                                ? URL.createObjectURL(newImage)
+
+                                                : formData.photo
+
+                                                    ? `${import.meta.env.VITE_API_BASE_URL}${formData.photo}`
+
+                                                    : "https://i.ibb.co/4pDNDk1/avatar.png"
+
+                                        }
+                                        alt={formData.name}
+                                    />
+
+                                </div>
+
+                            </div>
+
+                            <span className="text-sm text-gray-500">
+
+                                Current profile photo
+
+                            </span>
+
+                        </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
@@ -402,7 +397,7 @@ const Register = () => {
 
                             </div>
 
-                            {/* Email */}
+                            {/* Email (Read-only) */}
 
                             <div>
 
@@ -424,10 +419,9 @@ const Register = () => {
                                         type="email"
                                         name="email"
                                         className="input input-bordered w-full pl-6"
-                                        placeholder="Enter email address"
                                         value={formData.email}
-                                        onChange={handleChange}
-                                        required
+                                        disabled
+                                        title="Email cannot be changed here (tied to login account)"
                                     />
 
                                 </div>
@@ -466,108 +460,6 @@ const Register = () => {
 
                             </div>
 
-                            {/* Password */}
-
-                            <div>
-
-                                <label className="label">
-
-                                    <span className="label-text font-semibold">
-
-                                        Password
-
-                                    </span>
-
-                                </label>
-
-                                <div className="relative">
-
-                                    <FaLock className="absolute left-4 top-4 text-gray-400" />
-
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        name="password"
-                                        className="input input-bordered w-full pl-6 pr-12"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        placeholder="Entry your password"
-                                        required
-                                    />
-
-                                    <button
-                                        type="button"
-                                        className="absolute right-4 top-4"
-                                        onClick={() =>
-                                            setShowPassword(!showPassword)
-                                        }
-                                    >
-
-                                        {
-
-                                            showPassword ?
-
-                                                <FaEyeSlash />
-
-                                                :
-
-                                                <FaEye />
-
-                                        }
-
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-                            {/* Confirm Password */}
-
-                            <div>
-
-                                <label className="label">
-
-                                    <span className="label-text font-semibold">
-
-                                        Confirm Password
-
-                                    </span>
-
-                                </label>
-
-                                <div className="relative">
-
-                                    <FaLock className="absolute left-4 top-4 text-gray-400" />
-
-                                    <input
-                                        type={showConfirmPassword ? "text" : "password"}
-                                        name="confirmPassword"
-                                        className="input input-bordered w-full pl-6 pr-12"
-                                        value={formData.confirmPassword}
-                                        onChange={handleChange}
-                                        placeholder="Entry your confirm password"
-                                        required
-                                    />
-
-                                    <button
-                                        type="button"
-                                        className="absolute right-4 top-4"
-                                        onClick={() =>
-                                            setShowConfirmPassword(
-                                                !showConfirmPassword
-                                            )
-                                        }
-                                    >
-                                        {
-                                            showConfirmPassword
-                                                ? <FaEyeSlash />
-                                                : <FaEye />
-                                        }
-                                    </button>
-
-                                </div>
-
-                            </div>
-
                             {/* Profile Picture */}
 
                             <div className="lg:col-span-2">
@@ -578,7 +470,7 @@ const Register = () => {
 
                                         <FaImage className="inline mr-2" />
 
-                                        Profile Picture
+                                        Change Profile Picture
 
                                     </span>
 
@@ -595,7 +487,7 @@ const Register = () => {
 
                                     <span className="label-text-alt text-gray-500">
 
-                                        JPG, JPEG or PNG (Maximum 2MB)
+                                        Leave empty to keep current photo. JPG, JPEG or PNG (Maximum 2MB)
 
                                     </span>
 
@@ -624,14 +516,6 @@ const Register = () => {
                     </button>
 
                     <button
-                        type="button"
-                        onClick={handleReset}
-                        className="btn btn-outline"
-                    >
-                        Reset
-                    </button>
-
-                    <button
                         type="submit"
                         className="btn btn-primary"
                         disabled={loading}
@@ -651,7 +535,7 @@ const Register = () => {
 
                                     <FaSave />
 
-                                    Create User
+                                    Update User
 
                                 </>
 
@@ -669,4 +553,4 @@ const Register = () => {
 
 };
 
-export default Register;
+export default UpdateUser;

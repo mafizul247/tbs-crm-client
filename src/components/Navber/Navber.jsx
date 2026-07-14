@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   FaBars,
   FaMoon,
@@ -9,10 +9,13 @@ import {
 } from "react-icons/fa";
 import useAuth from "../../hooks/useAuth";
 import { useState } from "react";
+import { toast } from "react-toastify";
+
 
 const Navber = ({ sidebarOpen, setSidebarOpen }) => {
   const { user, logOut } = useAuth();
   const [themIcon, setThemIcon] = useState("light")
+  const navigate = useNavigate();
 
   const currentTheme =
     document.documentElement.getAttribute("data-theme") || "light";
@@ -30,7 +33,10 @@ const Navber = ({ sidebarOpen, setSidebarOpen }) => {
 
   const handleLogout = () => {
     logOut()
-      .then(() => { })
+      .then(() => { 
+        toast("User Logout Successfully")
+        navigate("/login")
+      })
       .catch(console.error);
   };
 

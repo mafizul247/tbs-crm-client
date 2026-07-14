@@ -14,61 +14,30 @@ import CRMDashboard from "../pages/CRM/CRMDashboard/CRMDashboard";
 import ViewLead from "../pages/CRM/ViewLead/ViewLead";
 import UpdateLead from "../pages/CRM/UpdateLead/UpdateLead";
 import NewClient from "../pages/CRM/CreateClient/NewClient";
+import Users from "../pages/Users/Users";
+import UpdateUser from "../pages/UpdateUser/UpdateUser";
+import DetailsUser from "../pages/DetailsUser/DetailsUser";
 
 const router = createBrowserRouter([
     {
         path: '/',
         Component: MainLayout,
         children: [
-            {
-                index: true,
-                path: '/',
-                element: <PrivateRoute><Home /> </PrivateRoute>
-            },
-            {
-                path: 'register',
-                element: <Register />
-            },
-            {
-                path: 'crm-dashboard',
-                element: <CRMDashboard />
-            },
-            {
-                path: "clients",
-                element: <Clients />
-            },
-            {
-                path: "clients/:id",
-                element: <ViewClient />
-            },
-            {
-                path: "create-client",
-                element: <CreateClient />
-            },
-            {
-                path: "new-client",
-                element: <NewClient />
-            },
-            {
-                path: 'update-client/:id',
-                element: <UpdateClient />
-            },
-            {
-                path: "leads",
-                element: <Leads />
-            },
-            {
-                path: 'create-lead',
-                element: <CreateLead />
-            },
-            {
-                path: 'leads/:id',
-                element: <ViewLead />
-            },
-            {
-                path: 'edit-lead/:id',
-                element: <UpdateLead />
-            }
+            { path: '/', element: <PrivateRoute><Home /> </PrivateRoute> },
+            { path: 'register', element: <Register /> },
+            { path: 'users', element: <Users /> },
+            { path: 'update-user/:id', element: <UpdateUser /> },
+            { path: 'users/:id', element: <DetailsUser /> },
+            { path: 'crm-dashboard', element: <CRMDashboard /> },
+            { path: "clients", element: <Clients /> },
+            { path: "clients/:id", element: <ViewClient /> },
+            { path: "create-client", element: <CreateClient /> },
+            { path: "new-client", element: <NewClient /> },
+            { path: 'update-client/:id', element: <UpdateClient /> },
+            { path: "leads", element: <Leads /> },
+            { path: 'create-lead', element: <CreateLead /> },
+            { path: 'leads/:id', element: <ViewLead /> },
+            { path: 'edit-lead/:id', element: <UpdateLead /> }
         ]
     },
     {

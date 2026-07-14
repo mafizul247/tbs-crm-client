@@ -17,7 +17,8 @@ import {
 } from "react-icons/fa";
 
 const Sidebar = ({ setSidebarOpen }) => {
-    const [crmOpen, setCrmOpen] = useState(true);
+    const [crmOpen, setCrmOpen] = useState(false);
+    const [masterOpen, setMasterOpen] = useState(false);
     const [billingOpen, setBillingOpen] = useState(false);
 
     const closeDrawer = () => {
@@ -153,7 +154,7 @@ const Sidebar = ({ setSidebarOpen }) => {
                                 </NavLink>
                             </li>
 
-                            {<li>
+                            <li>
                                 <NavLink
                                     to="/new-client"
                                     className={menuClass}
@@ -162,7 +163,7 @@ const Sidebar = ({ setSidebarOpen }) => {
                                     <FaPlusCircle />
                                     New Client
                                 </NavLink>
-                            </li>}
+                            </li>
 
                         </ul>
                     )}
@@ -237,6 +238,54 @@ const Sidebar = ({ setSidebarOpen }) => {
                         </ul>
                     )}
                 </li> */}
+
+                {/* Master Data */}
+                <li className="mt-3">
+
+                    <button
+                        onClick={() => setMasterOpen(!masterOpen)}
+                        className="flex justify-between items-center rounded-lg hover:bg-base-300"
+                    >
+                        <span className="flex items-center gap-3">
+                            <FaFileInvoiceDollar />
+                            Master Data
+                        </span>
+
+                        {masterOpen ? (
+                            <FaChevronDown />
+                        ) : (
+                            <FaChevronRight />
+                        )}
+                    </button>
+
+                    {masterOpen && (
+                        <ul className="ml-2 mt-2 space-y-1">
+
+                            <li>
+                                <NavLink
+                                    to="/users"
+                                    className={menuClass}
+                                    onClick={closeDrawer}
+                                >
+                                    <FaUsers />
+                                    Users
+                                </NavLink>
+                            </li>
+
+                            <li>
+                                <NavLink
+                                    to="/register"
+                                    className={menuClass}
+                                    onClick={closeDrawer}
+                                >
+                                    <FaPlusCircle />
+                                    User Register
+                                </NavLink>
+                            </li>
+
+                        </ul>
+                    )}
+                </li>
 
             </ul>
 
