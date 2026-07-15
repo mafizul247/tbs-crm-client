@@ -17,6 +17,10 @@ import NewClient from "../pages/CRM/CreateClient/NewClient";
 import Users from "../pages/Users/Users";
 import UpdateUser from "../pages/UpdateUser/UpdateUser";
 import DetailsUser from "../pages/DetailsUser/DetailsUser";
+import Organizations from "../pages/CRM/Organizations/Organizations";
+import CreateOrganization from "../pages/CRM/Organizations/CreateOrganization";
+import DetailsOrganization from "../pages/CRM/Organizations/DetailsOrganization";
+import UpdateOrganization from "../pages/CRM/Organizations/UpdateOrganization";
 
 const router = createBrowserRouter([
     {
@@ -37,7 +41,11 @@ const router = createBrowserRouter([
             { path: "leads", element: <Leads /> },
             { path: 'create-lead', element: <CreateLead /> },
             { path: 'leads/:id', element: <ViewLead /> },
-            { path: 'edit-lead/:id', element: <UpdateLead /> }
+            { path: 'edit-lead/:id', element: <UpdateLead /> },
+            { path: 'organizations', element: <Organizations /> },
+            { path: 'create-organization', element: <CreateOrganization /> },
+            { path: 'organizations/:id', element: <DetailsOrganization /> },
+            { path: 'organizations/update/:id', element: <UpdateOrganization /> }
         ]
     },
     {
