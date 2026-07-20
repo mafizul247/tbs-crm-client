@@ -1,50 +1,66 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
+import Swal from "sweetalert2";
 
 import {
     FaPlus,
     FaSearch,
-    FaSyncAlt,
-    FaClipboardList,
-    FaCheckCircle,
-    FaTimesCircle,
-    FaClock,
     FaEye,
     FaEdit,
     FaTrash,
-    FaAngleLeft,
-    FaAngleRight
+    FaBullseye,
+    FaComments
 } from "react-icons/fa";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+
+
+const statusBadgeColor = {
+
+    "New": "badge-info",
+
+    "Contacted": "badge-primary",
+
+    "In Progress": "badge-warning",
+
+    "Proposal Sent": "badge-secondary",
+
+    "Negotiation": "badge-accent",
+
+    "Won": "badge-success",
+
+    "Lost": "badge-error"
+
+};
+
+const priorityBadgeColor = {
+
+    "Low": "badge-secondary",
+
+    "Medium": "badge-info",
+
+    "High": "badge-warning",
+
+    "Urgent": "badge-error"
+
+};
 
 
 const Leads = () => {
 
     const axiosSecure = useAxiosSecure();
 
-    const [loading, setLoading] = useState(true);
-
     const [leads, setLeads] = useState([]);
+
+    const [loading, setLoading] = useState(true);
 
     const [search, setSearch] = useState("");
 
-    const [statistics, setStatistics] = useState({
-        total: 0,
-        newLead: 0,
-        won: 0,
-        lost: 0
-    });
-    const [currentPage, setCurrentPage] = useState(1);
+    const [page, setPage] = useState(1);
 
-    const itemsPerPage = 10;
+    const [limit] = useState(10);
 
-    const totalPages = Math.ceil(leads.length / itemsPerPage);
-
-    const paginatedLeads = leads.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
+    const [total, setTotal] = useState(0);
 
     const loadLeads = async () => {
 
@@ -52,32 +68,15 @@ const Leads = () => {
 
             setLoading(true);
 
-            const { data } = await axiosSecure.get(
-                `/leads?search=${search}`
-            );
+            const { data } = await axiosSecure.get("/leads", {
 
-            setLeads(data.data || []);
-
-            setStatistics({
-
-                total: data.total || 0,
-
-                newLead:
-                    data.data?.filter(
-                        item => item.leadStatus === "New"
-                    ).length || 0,
-
-                won:
-                    data.data?.filter(
-                        item => item.leadStatus === "Won"
-                    ).length || 0,
-
-                lost:
-                    data.data?.filter(
-                        item => item.leadStatus === "Lost"
-                    ).length || 0,
+                params: { page, limit, search }
 
             });
+
+            setLeads(data.data);
+
+            setTotal(data.total);
 
         }
         catch (error) {
@@ -97,52 +96,124 @@ const Leads = () => {
 
         loadLeads();
 
-    }, [search]);
+    }, [page, search]);
+
+    const handleSearch = (e) => {
+
+        setSearch(e.target.value);
+
+        setPage(1);
+
+    };
+
+    const totalPages = Math.ceil(total / limit);
+
+    const handlePrevious = () => {
+
+        if (page > 1) setPage(page - 1);
+
+    };
+
+    const handleNext = () => {
+
+        if (page < totalPages) setPage(page + 1);
+
+    };
 
     const handleDelete = async (id) => {
 
-        const result = await Swal.fire({
-            title: "Delete Lead?",
-            text: "This action cannot be undone.",
+        Swal.fire({
+
+            title: "Are you sure?",
+
+            text: "This will permanently delete the lead and all its interactions/submissions!",
+
             icon: "warning",
+
             showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Delete"
-        });
 
-        if (!result.isConfirmed) return;
+            confirmButtonText: "Yes, Delete",
 
-        try {
+            cancelButtonText: "Cancel",
 
-            const { data } = await axiosSecure.delete(`/leads/${id}`);
+            confirmButtonColor: "#d33"
 
-            if (data.deletedCount > 0) {
+        }).then(async (result) => {
+
+            if (!result.isConfirmed) return;
+
+            try {
+
+                const { data } = await axiosSecure.delete(`/leads/${id}`);
+
+                if (data.deletedCount > 0) {
+
+                    Swal.fire({
+
+                        icon: "success",
+
+                        title: "Deleted",
+
+                        text: "Lead deleted successfully.",
+
+                        timer: 1500,
+
+                        showConfirmButton: false
+
+                    });
+
+                    loadLeads();
+
+                }
+
+            }
+            catch (error) {
+
+                console.log(error);
 
                 Swal.fire({
-                    icon: "success",
-                    title: "Deleted!",
-                    text: "Lead deleted successfully.",
-                    timer: 1500,
-                    showConfirmButton: false
-                });
 
-                loadLeads();
+                    icon: "error",
+
+                    title: "Delete Failed",
+
+                    text: error.response?.data?.message || error.message
+
+                });
 
             }
 
-        }
-        catch (error) {
+        });
 
-            console.log(error);
+    };
 
-            Swal.fire({
-                icon: "error",
-                title: "Failed",
-                text: "Unable to delete lead."
-            });
+    const formatCurrency = (value) => {
 
-        }
+        if (!value) return "-";
+
+        return new Intl.NumberFormat("en-US", {
+
+            style: "currency",
+
+            currency: "USD"
+
+        }).format(value);
+
+    };
+
+    const formatDate = (value) => {
+
+        if (!value) return "-";
+
+        return new Date(value).toLocaleDateString("en-US", {
+
+            year: "numeric",
+
+            month: "short",
+
+            day: "numeric"
+
+        });
 
     };
 
@@ -156,191 +227,93 @@ const Leads = () => {
 
             </Helmet>
 
-            {/* ===========================================
-                    Header
-            =========================================== */}
-
             <div className="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6">
 
                 <div>
 
-                    <h2 className="text-3xl font-bold">
+                    <h2 className="text-3xl font-bold flex items-center gap-3">
 
-                        Lead Management
+                        <FaBullseye className="text-primary" />
+
+                        Leads
 
                     </h2>
 
                     <p className="text-gray-500 mt-1">
 
-                        Manage all sales opportunities from one place.
+                        Manage all leads and opportunities from one place.
 
                     </p>
 
                 </div>
 
-                <div className="flex gap-3">
+                <Link to="/create-lead" className="btn btn-primary">
 
-                    <button
-                        onClick={loadLeads}
-                        className="btn btn-outline"
-                    >
+                    <FaPlus />
 
-                        <FaSyncAlt />
+                    Add New Lead
 
-                        Refresh
-
-                    </button>
-
-                    <Link
-                        to="/create-lead"
-                        className="btn btn-primary"
-                    >
-
-                        <FaPlus />
-
-                        Add Lead
-
-                    </Link>
-
-                </div>
+                </Link>
 
             </div>
-
-            {/* ===========================================
-                    Statistics
-            =========================================== */}
-
-            <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-5 mb-6">
-
-                <div className="card bg-primary text-primary-content shadow">
-
-                    <div className="card-body">
-
-                        <div className="flex justify-between items-center">
-
-                            <div>
-
-                                <p>Total Leads</p>
-
-                                <h2 className="text-4xl font-bold">
-
-                                    {statistics.total}
-
-                                </h2>
-
-                            </div>
-
-                            <FaClipboardList size={35} />
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div className="card bg-warning text-white shadow">
-
-                    <div className="card-body">
-
-                        <div className="flex justify-between items-center">
-
-                            <div>
-
-                                <p>New Leads</p>
-
-                                <h2 className="text-4xl font-bold">
-
-                                    {statistics.newLead}
-
-                                </h2>
-
-                            </div>
-
-                            <FaClock size={35} />
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div className="card bg-success text-success-content shadow">
-
-                    <div className="card-body">
-
-                        <div className="flex justify-between items-center">
-
-                            <div>
-
-                                <p>Won</p>
-
-                                <h2 className="text-4xl font-bold">
-
-                                    {statistics.won}
-
-                                </h2>
-
-                            </div>
-
-                            <FaCheckCircle size={35} />
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div className="card bg-error text-error-content shadow">
-
-                    <div className="card-body">
-
-                        <div className="flex justify-between items-center">
-
-                            <div>
-
-                                <p>Lost</p>
-
-                                <h2 className="text-4xl font-bold">
-
-                                    {statistics.lost}
-
-                                </h2>
-
-                            </div>
-
-                            <FaTimesCircle size={35} />
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            {/* ===========================================
-                    Search
-            =========================================== */}
 
             <div className="card bg-base-100 border shadow mb-6">
 
                 <div className="card-body">
 
-                    <div className="join w-full">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-end">
 
-                        <input
-                            type="text"
-                            className="input input-bordered join-item w-full"
-                            placeholder="Search by Topic, Organization, Project..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                        <div>
 
-                        <button className="btn btn-primary join-item">
+                            <label className="label">
 
-                            <FaSearch />
+                                <span className="label-text font-semibold">
 
-                        </button>
+                                    Search Lead
+
+                                </span>
+
+                            </label>
+
+                            <label className="input input-bordered flex items-center gap-3">
+
+                                <FaSearch className="text-gray-500" />
+
+                                <input
+                                    type="text"
+                                    className="grow"
+                                    placeholder="Search by Topic, Reference No, Project or Status..."
+                                    value={search}
+                                    onChange={handleSearch}
+                                />
+
+                            </label>
+
+                        </div>
+
+                        <div className="flex justify-end">
+
+                            <div className="stats shadow border">
+
+                                <div className="stat py-4">
+
+                                    <div className="stat-title">
+
+                                        Total Leads
+
+                                    </div>
+
+                                    <div className="stat-value text-primary">
+
+                                        {total}
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
 
                     </div>
 
@@ -348,12 +321,7 @@ const Leads = () => {
 
             </div>
 
-            {/* Table will start here in Part 2 */}
-            {/* ===========================================
-                    Leads Table
-            =========================================== */}
-
-            <div className="overflow-x-auto bg-base-100 border shadow rounded-xl">
+            <div className="overflow-x-auto bg-base-100 border rounded-xl shadow">
 
                 <table className="table table-zebra">
 
@@ -367,24 +335,20 @@ const Leads = () => {
 
                             <th>Organization</th>
 
-                            <th>Project</th>
-
                             <th>Priority</th>
 
                             <th>Status</th>
 
-                            <th className="text-right">
-                                Estimated Cost
-                            </th>
+                            <th>Estimated Cost</th>
 
-                            <th>Follow-up</th>
+                            <th>Last Follow-up</th>
 
-                            <th>Assigned To</th>
-
-                            <th>Created</th>
+                            <th>Interactions</th>
 
                             <th className="text-center">
+
                                 Action
+
                             </th>
 
                         </tr>
@@ -398,12 +362,9 @@ const Leads = () => {
 
                                 <tr>
 
-                                    <td
-                                        colSpan="11"
-                                        className="text-center py-20"
-                                    >
+                                    <td colSpan="9" className="text-center py-12">
 
-                                        <span className="loading loading-spinner loading-lg"></span>
+                                        <span className="loading loading-spinner loading-lg text-primary"></span>
 
                                     </td>
 
@@ -415,30 +376,9 @@ const Leads = () => {
 
                                     <tr>
 
-                                        <td
-                                            colSpan="11"
-                                            className="text-center py-16"
-                                        >
+                                        <td colSpan="9" className="text-center py-12 text-gray-500">
 
-                                            <div className="flex flex-col items-center">
-
-                                                <FaClipboardList
-                                                    className="text-6xl text-gray-300 mb-3"
-                                                />
-
-                                                <h2 className="text-xl font-semibold">
-
-                                                    No Lead Found
-
-                                                </h2>
-
-                                                <p className="text-gray-500">
-
-                                                    Create your first lead.
-
-                                                </p>
-
-                                            </div>
+                                            No leads found.
 
                                         </td>
 
@@ -446,76 +386,58 @@ const Leads = () => {
 
                                     :
 
-                                    paginatedLeads.map((lead, index) => (
+                                    leads.map((lead, index) => (
 
                                         <tr key={lead._id}>
 
-                                            {/* SL */}
-
                                             <td>
 
-                                                {index + 1}
+                                                {(page - 1) * limit + index + 1}
 
                                             </td>
 
-                                            {/* Topic */}
-
                                             <td>
 
-                                                <div>
+                                                <div className="font-bold">
 
-                                                    <h2 className="font-semibold">
-
-                                                        {lead.topic}
-
-                                                    </h2>
-
-                                                    <p className="text-xs text-gray-500">
-
-                                                        {lead.reference || "No Reference"}
-
-                                                    </p>
+                                                    {lead.leadTopic}
 
                                                 </div>
 
-                                            </td>
+                                                {
 
-                                            {/* Organization */}
+                                                    lead.referenceNo && (
+
+                                                        <div className="text-xs text-gray-500">
+
+                                                            Ref: {lead.referenceNo}
+
+                                                        </div>
+
+                                                    )
+
+                                                }
+
+                                            </td>
 
                                             <td>
 
-                                                {lead.organization}
+                                                {
+
+                                                    lead.organizationInfo?.organizationName || (
+
+                                                        <span className="text-gray-400">-</span>
+
+                                                    )
+
+                                                }
 
                                             </td>
-
-                                            {/* Project */}
-
-                                            <td>
-
-                                                {lead.project}
-
-                                            </td>
-
-                                            {/* Priority */}
 
                                             <td>
 
                                                 <span
-                                                    className={`badge
-
-                                                        ${lead.priority === "High"
-                                                            ? "badge-success"
-
-                                                            : lead.priority === "Medium"
-                                                                ? "badge-warning"
-
-                                                                : lead.priority === "Low"
-                                                                    ? "badge-error"
-
-                                                                    : "badge-secondary"
-                                                        }
-
-                                                    `}
+                                                    className={`badge ${priorityBadgeColor[lead.priority] || "badge-ghost"}`}
                                                 >
 
                                                     {lead.priority}
@@ -524,32 +446,10 @@ const Leads = () => {
 
                                             </td>
 
-                                            {/* Status */}
-
                                             <td>
 
                                                 <span
-                                                    className={`badge
-
-                                                        ${lead.leadStatus === "New"
-                                                            ? "badge-info"
-
-                                                            : lead.leadStatus === "Qualified"
-                                                                ? "badge-primary"
-
-                                                                : lead.leadStatus === "Proposal Sent"
-                                                                    ? "badge-warning"
-
-                                                                    : lead.leadStatus === "Negotiation"
-                                                                        ? "badge-accent"
-
-                                                                        : lead.leadStatus === "Won"
-                                                                            ? "badge-success"
-
-                                                                            : "badge-error"
-                                                        }
-
-                                                    `}
+                                                    className={`${statusBadgeColor[lead.leadStatus] || "badge-ghost"}`}
                                                 >
 
                                                     {lead.leadStatus}
@@ -558,73 +458,40 @@ const Leads = () => {
 
                                             </td>
 
-                                            {/* Estimated Cost */}
+                                            <td>
 
-                                            <td className="text-right">
-
-                                                ৳ {Number(
-                                                    lead.estimatedCost || 0
-                                                ).toLocaleString()}
+                                                {formatCurrency(lead.estimatedCost)}
 
                                             </td>
 
-                                            {/* Follow Up */}
+                                            {/* ==========================================
+                                                    Last Follow-up
+                                                    - dynamically computed on the backend
+                                                      from the latest Interaction
+                                                    - falls back to the Lead's initial
+                                                      follow-up date if no Interactions
+                                                      have been logged yet
+                                            ========================================== */}
 
                                             <td>
 
-                                                {
-
-                                                    lead.followUpDate
-
-                                                        ?
-
-                                                        new Date(
-                                                            lead.followUpDate
-                                                        ).toLocaleDateString()
-
-                                                        :
-
-                                                        "--"
-
-                                                }
+                                                {formatDate(lead.lastFollowUpDate)}
 
                                             </td>
 
-                                            {/* Assign */}
+                                            {/* Interactions Count */}
 
                                             <td>
 
-                                                {
+                                                <span className="badge badge-outline flex items-center gap-1 w-fit">
 
-                                                    lead.assignTo || "--"
+                                                    <FaComments />
 
-                                                }
+                                                    {lead.totalInteractions || 0}
 
-                                            </td>
-
-                                            {/* Created */}
-
-                                            <td>
-
-                                                {
-
-                                                    lead.createdAt
-
-                                                        ?
-
-                                                        new Date(
-                                                            lead.createdAt
-                                                        ).toLocaleDateString()
-
-                                                        :
-
-                                                        "--"
-
-                                                }
+                                                </span>
 
                                             </td>
-
-                                            {/* Action */}
 
                                             <td>
 
@@ -632,26 +499,29 @@ const Leads = () => {
 
                                                     <Link
                                                         to={`/leads/${lead._id}`}
-                                                        className="btn btn-sm btn-info text-white tooltip"
-                                                        data-tip="View"
+                                                        className="btn btn-info btn-sm text-white"
                                                     >
+
                                                         <FaEye />
+
                                                     </Link>
 
                                                     <Link
-                                                        to={`/edit-lead/${lead._id}`}
-                                                        className="btn btn-sm btn-warning tooltip"
-                                                        data-tip="Edit"
+                                                        to={`/leads/update/${lead._id}`}
+                                                        className="btn btn-warning btn-sm text-white"
                                                     >
+
                                                         <FaEdit />
+
                                                     </Link>
 
                                                     <button
                                                         onClick={() => handleDelete(lead._id)}
-                                                        className="btn btn-sm btn-error text-white tooltip"
-                                                        data-tip="Delete"
+                                                        className="btn btn-error btn-sm"
                                                     >
+
                                                         <FaTrash />
+
                                                     </button>
 
                                                 </div>
@@ -670,74 +540,92 @@ const Leads = () => {
 
             </div>
 
-            <div className="flex justify-between items-center mt-6">
+            {
+                total > 0 && (
 
-                <p className="text-sm text-gray-500">
+                    <div className="flex flex-col lg:flex-row justify-between items-center mt-6 gap-4">
 
-                    Showing
+                        <div className="text-sm text-gray-500">
 
-                    <span className="font-bold mx-1">
+                            Showing
 
-                        {paginatedLeads.length}
+                            <span className="font-semibold mx-1">
 
-                    </span>
+                                {total === 0 ? 0 : ((page - 1) * limit) + 1}
 
-                    of
+                            </span>
 
-                    <span className="font-bold mx-1">
+                            -
 
-                        {leads.length}
+                            <span className="font-semibold mx-1">
 
-                    </span>
+                                {Math.min(page * limit, total)}
 
-                    leads
+                            </span>
 
-                </p>
+                            of
 
-                <div className="join">
+                            <span className="font-semibold mx-1">
 
-                    <button
-                        className="join-item btn"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                    >
-                        <FaAngleLeft />
-                    </button>
+                                {total}
 
-                    {
-                        [...Array(totalPages)].map((_, index) => (
+                            </span>
+
+                            Leads
+
+                        </div>
+
+                        <div className="join">
 
                             <button
-                                key={index}
-                                onClick={() => setCurrentPage(index + 1)}
-                                className={`join-item btn ${currentPage === index + 1
-                                        ? "btn-primary"
-                                        : ""
-                                    }`}
+                                className="join-item btn"
+                                onClick={handlePrevious}
+                                disabled={page === 1}
                             >
 
-                                {index + 1}
+                                Previous
 
                             </button>
 
-                        ))
-                    }
+                            {
 
-                    <button
-                        className="join-item btn"
-                        disabled={currentPage === totalPages}
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                    >
-                        <FaAngleRight />
-                    </button>
+                                [...Array(totalPages).keys()].map(number => (
 
-                </div>
+                                    <button
+                                        key={number}
+                                        onClick={() => setPage(number + 1)}
+                                        className={`join-item btn ${page === number + 1 ? "btn-primary" : ""}`}
+                                    >
 
-            </div>
+                                        {number + 1}
+
+                                    </button>
+
+                                ))
+
+                            }
+
+                            <button
+                                className="join-item btn"
+                                onClick={handleNext}
+                                disabled={page === totalPages}
+                            >
+
+                                Next
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                )
+            }
 
         </div>
 
     );
+
 };
 
 export default Leads;

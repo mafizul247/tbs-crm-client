@@ -21,7 +21,7 @@ const Footer = () => {
                 <div>
                     Developed by{" "}
                     <span className="font-semibold text-primary">
-                        Mafizul Islam.
+                        Technology and Business Solutions Ltd.
                     </span>
                 </div>
 

@@ -180,7 +180,7 @@ const Register = () => {
 
             };
 
-            console.log(userInfo)
+            // console.log(userInfo)
 
             const { data } = await axiosSecure.post(
 

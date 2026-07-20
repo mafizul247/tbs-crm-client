@@ -14,10 +14,11 @@ import {
     FaMoneyCheckAlt,
     FaChartBar,
     FaTimes,
+    FaClipboardList,
 } from "react-icons/fa";
 
 const Sidebar = ({ setSidebarOpen }) => {
-    const [crmOpen, setCrmOpen] = useState(false);
+    const [crmOpen, setCrmOpen] = useState(true);
     const [masterOpen, setMasterOpen] = useState(false);
     const [billingOpen, setBillingOpen] = useState(false);
 
@@ -112,6 +113,17 @@ const Sidebar = ({ setSidebarOpen }) => {
 
                             <li>
                                 <NavLink
+                                    to="/follow-up-list"
+                                    className={menuClass}
+                                    onClick={closeDrawer}
+                                >
+                                    <FaClipboardList />
+                                    Follow-Up List
+                                </NavLink>
+                            </li>
+
+                            <li>
+                                <NavLink
                                     to="/leads"
                                     className={menuClass}
                                     onClick={closeDrawer}
@@ -129,61 +141,6 @@ const Sidebar = ({ setSidebarOpen }) => {
                                 >
                                     <FaPlusCircle />
                                     Create Lead
-                                </NavLink>
-                            </li>
-
-                            {/* <li>
-                                <NavLink
-                                    to="/clients"
-                                    className={menuClass}
-                                    onClick={closeDrawer}
-                                >
-                                    <FaUserPlus />
-                                    Clients
-                                </NavLink>
-                            </li> */}
-
-                            <li>
-                                <NavLink
-                                    to="/organizations"
-                                    className={menuClass}
-                                    onClick={closeDrawer}
-                                >
-                                    <FaUserPlus />
-                                    Organizations
-                                </NavLink>
-                            </li>
-
-                            {/* <li>
-                                <NavLink
-                                    to="/create-client"
-                                    className={menuClass}
-                                    onClick={closeDrawer}
-                                >
-                                    <FaPlusCircle />
-                                    Create Client
-                                </NavLink>
-                            </li> */}
-
-                            {/* <li>
-                                <NavLink
-                                    to="/new-client"
-                                    className={menuClass}
-                                    onClick={closeDrawer}
-                                >
-                                    <FaPlusCircle />
-                                    New Client
-                                </NavLink>
-                            </li> */}
-
-                            <li>
-                                <NavLink
-                                    to="/create-organization"
-                                    className={menuClass}
-                                    onClick={closeDrawer}
-                                >
-                                    <FaPlusCircle />
-                                    Create Org
                                 </NavLink>
                             </li>
 
@@ -302,6 +259,28 @@ const Sidebar = ({ setSidebarOpen }) => {
                                 >
                                     <FaPlusCircle />
                                     User Register
+                                </NavLink>
+                            </li>
+                            
+                            <li>
+                                <NavLink
+                                    to="/organizations"
+                                    className={menuClass}
+                                    onClick={closeDrawer}
+                                >
+                                    <FaUserPlus />
+                                    Organizations
+                                </NavLink>
+                            </li>
+
+                            <li>
+                                <NavLink
+                                    to="/create-organization"
+                                    className={menuClass}
+                                    onClick={closeDrawer}
+                                >
+                                    <FaPlusCircle />
+                                    Create Org
                                 </NavLink>
                             </li>
 

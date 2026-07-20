@@ -4,23 +4,19 @@ import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
 import PrivateRoute from "./PrivateRoute";
 import Home from "../pages/Home/Home";
-import CreateClient from "../pages/CRM/CreateClient/CreateClient";
-import Clients from "../pages/CRM/Clients/Clients";
-import ViewClient from "../pages/CRM/ViewClient/ViewClient";
-import UpdateClient from "../pages/CRM/UpdateClient/UpdateClient";
-import CreateLead from "../pages/CRM/CreateLead/CreateLead";
 import Leads from "../pages/CRM/Leads/Leads";
 import CRMDashboard from "../pages/CRM/CRMDashboard/CRMDashboard";
-import ViewLead from "../pages/CRM/ViewLead/ViewLead";
-import UpdateLead from "../pages/CRM/UpdateLead/UpdateLead";
-import NewClient from "../pages/CRM/CreateClient/NewClient";
 import Users from "../pages/Users/Users";
 import UpdateUser from "../pages/UpdateUser/UpdateUser";
 import DetailsUser from "../pages/DetailsUser/DetailsUser";
-import Organizations from "../pages/CRM/Organizations/Organizations";
-import CreateOrganization from "../pages/CRM/Organizations/CreateOrganization";
-import DetailsOrganization from "../pages/CRM/Organizations/DetailsOrganization";
-import UpdateOrganization from "../pages/CRM/Organizations/UpdateOrganization";
+import Organizations from "../pages/MasterData/Organizations/Organizations";
+import CreateOrganization from "../pages/MasterData/Organizations/CreateOrganization";
+import DetailsOrganization from "../pages/MasterData/Organizations/DetailsOrganization";
+import UpdateOrganization from "../pages/MasterData/Organizations/UpdateOrganization";
+import CreateLead from "../pages/CRM/Leads/CreateLead";
+import DetailsLead from "../pages/CRM/Leads/DetailsLead";
+import UpdateLead from "../pages/CRM/Leads/UpdateLead";
+import FollowUpList from "../pages/CRM/FollowUpList/FollowUpList";
 
 const router = createBrowserRouter([
     {
@@ -28,30 +24,23 @@ const router = createBrowserRouter([
         Component: MainLayout,
         children: [
             { path: '/', element: <PrivateRoute><Home /> </PrivateRoute> },
-            { path: 'register', element: <Register /> },
             { path: 'users', element: <Users /> },
+            { path: 'register', element: <Register /> },
             { path: 'update-user/:id', element: <UpdateUser /> },
             { path: 'users/:id', element: <DetailsUser /> },
             { path: 'crm-dashboard', element: <CRMDashboard /> },
-            { path: "clients", element: <Clients /> },
-            { path: "clients/:id", element: <ViewClient /> },
-            { path: "create-client", element: <CreateClient /> },
-            { path: "new-client", element: <NewClient /> },
-            { path: 'update-client/:id', element: <UpdateClient /> },
+            { path: 'follow-up-list', element: <FollowUpList /> },
             { path: "leads", element: <Leads /> },
             { path: 'create-lead', element: <CreateLead /> },
-            { path: 'leads/:id', element: <ViewLead /> },
-            { path: 'edit-lead/:id', element: <UpdateLead /> },
+            { path: 'leads/:id', element: <DetailsLead /> },
+            { path: 'leads/update/:id', element: <UpdateLead/> },
             { path: 'organizations', element: <Organizations /> },
             { path: 'create-organization', element: <CreateOrganization /> },
             { path: 'organizations/:id', element: <DetailsOrganization /> },
             { path: 'organizations/update/:id', element: <UpdateOrganization /> }
         ]
     },
-    {
-        path: 'login',
-        Component: Login
-    }
+    { path: 'login', Component: Login },
 ])
 
 export default router;
