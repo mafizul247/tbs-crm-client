@@ -203,6 +203,28 @@ const DetailsLead = () => {
 
     const [selectedContact, setSelectedContact] = useState(null);
 
+    /* ==========================================
+            New Organization Contact Form State
+            (used when the person needed isn't in
+            the organization's contact list yet —
+            saves to the ORGANIZATION permanently,
+            then also attaches to this Lead)
+    ========================================== */
+
+    const [newOrgContactForm, setNewOrgContactForm] = useState({
+
+        contactPerson: "",
+
+        designation: "",
+
+        mobile: "",
+
+        phone: "",
+
+        email: ""
+
+    });
+
     const [remarks, setRemarks] = useState([]);
 
     const [newRemarkText, setNewRemarkText] = useState("");
@@ -941,8 +963,119 @@ const DetailsLead = () => {
     };
 
     /* ==========================================
-            Add Remark
+            Add New Contact To Organization
+            (person doesn't exist in the org's
+            contact list at all yet — this creates
+            them on the ORGANIZATION record itself,
+            e.g. Company X grows from 1 saved contact
+            to 2, permanently, for all future Leads —
+            then also attaches the new contact to
+            THIS Lead right away)
     ========================================== */
+
+    const handleNewOrgContactChange = (field, value) => {
+
+        setNewOrgContactForm(prev => ({ ...prev, [field]: value }));
+
+    };
+
+    const submitNewOrgContact = async () => {
+
+        if (!newOrgContactForm.contactPerson.trim()) {
+
+            return Swal.fire({
+
+                icon: "warning",
+
+                title: "Contact Person is required."
+
+            });
+
+        }
+
+        const orgId = lead.organizationInfo?._id;
+
+        if (!orgId) {
+
+            return Swal.fire({
+
+                icon: "error",
+
+                title: "Organization Not Found",
+
+                text: "This lead has no linked organization."
+
+            });
+
+        }
+
+        try {
+
+            setSaving(true);
+
+            /* Step 1 — save permanently to the Organization */
+
+            await axiosSecure.post(`/organizations/${orgId}/contact`, newOrgContactForm);
+
+            /* Step 2 — also attach it to this Lead now */
+
+            await axiosSecure.post(`/leads/${id}/contact`, newOrgContactForm);
+
+            Swal.fire({
+
+                icon: "success",
+
+                title: "New Contact Added",
+
+                text: "Saved to the organization and attached to this lead.",
+
+                timer: 1800,
+
+                showConfirmButton: false
+
+            });
+
+            setActiveModal(null);
+
+            setNewOrgContactForm({
+
+                contactPerson: "",
+
+                designation: "",
+
+                mobile: "",
+
+                phone: "",
+
+                email: ""
+
+            });
+
+            loadLead();
+
+        }
+        catch (error) {
+
+            console.log(error);
+
+            Swal.fire({
+
+                icon: "error",
+
+                title: "Failed to Add Contact",
+
+                text: error.response?.data?.message || error.message
+
+            });
+
+        }
+        finally {
+
+            setSaving(false);
+
+        }
+
+    };
 
     const submitRemark = async () => {
 
@@ -1216,7 +1349,7 @@ const DetailsLead = () => {
 
                         <div>
 
-                            <p className="text-xl text-gray-500">Topic</p>
+                            <p className="text-xs text-gray-500 uppercase">Topic</p>
 
                             <p className="font-bold text-lg">{lead.leadTopic}</p>
 
@@ -1224,7 +1357,7 @@ const DetailsLead = () => {
 
                         <div>
 
-                            <p className="text-xl text-gray-500 ">Project</p>
+                            <p className="text-xs text-gray-500 uppercase">Project</p>
 
                             <p className="font-bold text-lg">{lead.project || "-"}</p>
 
@@ -1232,7 +1365,7 @@ const DetailsLead = () => {
 
                         <div>
 
-                            <p className="text-xl text-gray-500 ">Reference</p>
+                            <p className="text-xs text-gray-500 uppercase">Reference</p>
 
                             <p className="font-bold text-lg">{lead.referenceNo || "-"}</p>
 
@@ -1240,7 +1373,7 @@ const DetailsLead = () => {
 
                         <div>
 
-                            <p className="text-xl text-gray-500 ">Client</p>
+                            <p className="text-xs text-gray-500 uppercase">Client</p>
 
                             <p className="font-bold text-lg">
 
@@ -2660,11 +2793,24 @@ const DetailsLead = () => {
 
                             availableContactOptions.length === 0 ? (
 
-                                <p className="text-gray-500 text-center py-4">
+                                <div className="text-center py-4">
 
-                                    All organization contacts have already been added, or the organization has no contacts.
+                                    <p className="text-gray-500 mb-4">
 
-                                </p>
+                                        All organization contacts have already been added, or the organization has no contacts.
+
+                                    </p>
+
+                                    <button
+                                        onClick={() => setActiveModal("addNewOrgContact")}
+                                        className="btn btn-primary btn-sm"
+                                    >
+
+                                        <FaPlus /> Add New Contact
+
+                                    </button>
+
+                                </div>
 
                             ) : (
 
@@ -2684,11 +2830,117 @@ const DetailsLead = () => {
 
                                     </button>
 
+                                    <div className="divider text-xs text-gray-400">OR</div>
+
+                                    <button
+                                        onClick={() => setActiveModal("addNewOrgContact")}
+                                        className="btn btn-outline w-full"
+                                    >
+
+                                        <FaPlus /> Add a Brand New Contact
+
+                                    </button>
+
                                 </>
 
                             )
 
                         }
+
+                    </Modal>
+
+                )
+
+            }
+
+            {/* ------------ Add New Contact To Organization ------------ */}
+
+            {
+
+                activeModal === "addNewOrgContact" && (
+
+                    <Modal title="Add New Contact to Organization" onClose={() => setActiveModal(null)}>
+
+                        <p className="text-xs text-gray-500 mb-4">
+
+                            This saves the contact to <span className="font-semibold">{lead.organizationInfo?.organizationName || "this organization"}</span> permanently, and attaches them to this lead right away.
+
+                        </p>
+
+                        <div className="space-y-3">
+
+                            <div>
+
+                                <label className="label"><span className="label-text">Contact Person *</span></label>
+
+                                <input
+                                    type="text"
+                                    className="input input-bordered w-full"
+                                    value={newOrgContactForm.contactPerson}
+                                    onChange={(e) => handleNewOrgContactChange("contactPerson", e.target.value)}
+                                />
+
+                            </div>
+
+                            <div>
+
+                                <label className="label"><span className="label-text">Designation</span></label>
+
+                                <input
+                                    type="text"
+                                    className="input input-bordered w-full"
+                                    value={newOrgContactForm.designation}
+                                    onChange={(e) => handleNewOrgContactChange("designation", e.target.value)}
+                                />
+
+                            </div>
+
+                            <div>
+
+                                <label className="label"><span className="label-text">Mobile</span></label>
+
+                                <input
+                                    type="text"
+                                    className="input input-bordered w-full"
+                                    value={newOrgContactForm.mobile}
+                                    onChange={(e) => handleNewOrgContactChange("mobile", e.target.value)}
+                                />
+
+                            </div>
+
+                            <div>
+
+                                <label className="label"><span className="label-text">Phone</span></label>
+
+                                <input
+                                    type="text"
+                                    className="input input-bordered w-full"
+                                    value={newOrgContactForm.phone}
+                                    onChange={(e) => handleNewOrgContactChange("phone", e.target.value)}
+                                />
+
+                            </div>
+
+                            <div>
+
+                                <label className="label"><span className="label-text">Email</span></label>
+
+                                <input
+                                    type="email"
+                                    className="input input-bordered w-full"
+                                    value={newOrgContactForm.email}
+                                    onChange={(e) => handleNewOrgContactChange("email", e.target.value)}
+                                />
+
+                            </div>
+
+                            <button onClick={submitNewOrgContact} disabled={saving} className="btn btn-primary w-full">
+
+                                {saving ? <span className="loading loading-spinner loading-sm"></span> : "Add Contact"}
+
+                            </button>
+
+                        </div>
 
                     </Modal>
 

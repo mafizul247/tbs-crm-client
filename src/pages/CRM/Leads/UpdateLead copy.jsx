@@ -10,8 +10,7 @@ import {
     FaTrash,
     FaBullseye,
     FaSitemap,
-    FaFileAlt,
-    FaTimes
+    FaFileAlt
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import Select from "react-select";
@@ -121,33 +120,6 @@ const UpdateLead = () => {
     const [existingContacts, setExistingContacts] = useState([]);
 
     const [selectedNewContacts, setSelectedNewContacts] = useState([]);
-
-    /* ==========================================
-            Add Contact Modal State
-            (creates a brand new contact person —
-            saved permanently to the Organization,
-            then staged into existingContacts so it
-            gets included when the Lead form itself
-            is saved)
-    ========================================== */
-
-    const [contactModalOpen, setContactModalOpen] = useState(false);
-
-    const [savingContact, setSavingContact] = useState(false);
-
-    const [newContactForm, setNewContactForm] = useState({
-
-        contactPerson: "",
-
-        designation: "",
-
-        mobile: "",
-
-        phone: "",
-
-        email: ""
-
-    });
 
     /* ==========================================
             Documents
@@ -441,119 +413,6 @@ const UpdateLead = () => {
                 ]);
 
             }
-
-        }
-
-    };
-
-    /* ==========================================
-            Add Brand New Contact
-            (person not yet saved anywhere — this
-            creates them on the ORGANIZATION record
-            permanently via /organizations/:id/contact,
-            then stages them into existingContacts so
-            they're included in this Lead's contactList
-            when the form is submitted)
-    ========================================== */
-
-    const handleNewContactChange = (field, value) => {
-
-        setNewContactForm(prev => ({ ...prev, [field]: value }));
-
-    };
-
-    const submitNewContact = async () => {
-
-        if (!newContactForm.contactPerson.trim()) {
-
-            return Swal.fire({
-
-                icon: "warning",
-
-                title: "Contact Person is required."
-
-            });
-
-        }
-
-        if (!formData.organization) {
-
-            return Swal.fire({
-
-                icon: "warning",
-
-                title: "Select an Organization First",
-
-                text: "An organization must be selected before adding a contact."
-
-            });
-
-        }
-
-        try {
-
-            setSavingContact(true);
-
-            const orgId = formData.organization.value;
-
-            /* Save permanently to the Organization */
-
-            await axiosSecure.post(`/organizations/${orgId}/contact`, newContactForm);
-
-            /* Stage it into this Lead's contact list —
-               will be included when "Update Lead" is saved */
-
-            setExistingContacts(prev => [...prev, { ...newContactForm }]);
-
-            Swal.fire({
-
-                icon: "success",
-
-                title: "Contact Added",
-
-                text: "Saved to the organization and added to this lead's contact list.",
-
-                timer: 1800,
-
-                showConfirmButton: false
-
-            });
-
-            setContactModalOpen(false);
-
-            setNewContactForm({
-
-                contactPerson: "",
-
-                designation: "",
-
-                mobile: "",
-
-                phone: "",
-
-                email: ""
-
-            });
-
-        }
-        catch (error) {
-
-            console.log(error);
-
-            Swal.fire({
-
-                icon: "error",
-
-                title: "Failed to Add Contact",
-
-                text: error.response?.data?.message || error.message
-
-            });
-
-        }
-        finally {
-
-            setSavingContact(false);
 
         }
 
@@ -1323,25 +1182,11 @@ const UpdateLead = () => {
 
                     <div className="card-body">
 
-                        <div className="flex justify-between items-center mb-5">
+                        <h2 className="card-title text-primary mb-5">
 
-                            <h2 className="card-title text-primary">
+                            Contact List
 
-                                Contact List
-
-                            </h2>
-
-                            <button
-                                type="button"
-                                onClick={() => setContactModalOpen(true)}
-                                className="btn btn-sm btn-primary"
-                            >
-
-                                <FaPlus /> Add Contact
-
-                            </button>
-
-                        </div>
+                        </h2>
 
                         {
 
@@ -1687,132 +1532,6 @@ const UpdateLead = () => {
                 </div>
 
             </form>
-
-            {/* ==========================================
-                    Add Contact Modal
-            ========================================== */}
-
-            {
-
-                contactModalOpen && (
-
-                    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 p-4">
-
-                        <div className="bg-base-100 rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-
-                            <div className="flex justify-between items-center px-6 py-4 border-b">
-
-                                <h3 className="font-bold text-lg">Add Contact</h3>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setContactModalOpen(false)}
-                                    className="btn btn-sm btn-circle btn-ghost"
-                                >
-
-                                    <FaTimes />
-
-                                </button>
-
-                            </div>
-
-                            <div className="p-6">
-
-                                <p className="text-xs text-gray-500 mb-4">
-
-                                    This saves the contact to <span className="font-semibold">{formData.organization?.label || "the selected organization"}</span> permanently, and adds them to this lead's contact list.
-
-                                </p>
-
-                                <div className="space-y-3">
-
-                                    <div>
-
-                                        <label className="label"><span className="label-text">Contact Person *</span></label>
-
-                                        <input
-                                            type="text"
-                                            className="input input-bordered w-full"
-                                            value={newContactForm.contactPerson}
-                                            onChange={(e) => handleNewContactChange("contactPerson", e.target.value)}
-                                        />
-
-                                    </div>
-
-                                    <div>
-
-                                        <label className="label"><span className="label-text">Designation</span></label>
-
-                                        <input
-                                            type="text"
-                                            className="input input-bordered w-full"
-                                            value={newContactForm.designation}
-                                            onChange={(e) => handleNewContactChange("designation", e.target.value)}
-                                        />
-
-                                    </div>
-
-                                    <div>
-
-                                        <label className="label"><span className="label-text">Mobile</span></label>
-
-                                        <input
-                                            type="text"
-                                            className="input input-bordered w-full"
-                                            value={newContactForm.mobile}
-                                            onChange={(e) => handleNewContactChange("mobile", e.target.value)}
-                                        />
-
-                                    </div>
-
-                                    <div>
-
-                                        <label className="label"><span className="label-text">Phone</span></label>
-
-                                        <input
-                                            type="text"
-                                            className="input input-bordered w-full"
-                                            value={newContactForm.phone}
-                                            onChange={(e) => handleNewContactChange("phone", e.target.value)}
-                                        />
-
-                                    </div>
-
-                                    <div>
-
-                                        <label className="label"><span className="label-text">Email</span></label>
-
-                                        <input
-                                            type="email"
-                                            className="input input-bordered w-full"
-                                            value={newContactForm.email}
-                                            onChange={(e) => handleNewContactChange("email", e.target.value)}
-                                        />
-
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={submitNewContact}
-                                        disabled={savingContact}
-                                        className="btn btn-primary w-full"
-                                    >
-
-                                        {savingContact ? <span className="loading loading-spinner loading-sm"></span> : "Add Contact"}
-
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                )
-
-            }
 
         </div>
 
